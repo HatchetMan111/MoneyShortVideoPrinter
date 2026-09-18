@@ -17,7 +17,7 @@ Lokale MoneyPrinterTurbo-Installation als **LXC-Container auf Proxmox VE** im St
 | Zweck | KI-Kurzvideos lokal generieren (Skript→Vertonung→Footage→Subtitles→Schnitt), Bedienung per Web UI |
 | Tech-Stack | Python 3.11 / Streamlit (WebUI) + FastAPI/Uvicorn (API), `uv`, ffmpeg |
 | Upstream-Repo | https://github.com/harry0703/MoneyPrinterTurbo |
-| GitHub-Repo (dieser Installer) | `HatchetMan111/MoneyShortVideoPrinter` → **vor Nutzung ersetzen** |
+| GitHub-Repo (dieser Installer) | `HatchetMan111/MoneyShortVideoPrinter` |
 | Web-UI-Port | `8501` (Streamlit, konfigurierbar) |
 | API-Port | `8080` (FastAPI `/docs`, konfigurierbar) |
 | Default-Ressourcen | 4 vCPU · 8192 MB RAM · 30 GB Disk · Debian 12 LXC, `onboot: 1` |
@@ -31,7 +31,7 @@ bash -c "$(wget -qLO - https://raw.githubusercontent.com/HatchetMan111/MoneyShor
 ```
 
 Das Script fragt interaktiv ab (mit sinnvollen Defaults):
-`CT-ID` (150) · Hostname · vCPU (4) · RAM (8192) · Disk (30G) ·
+`CT-ID` (150, **belegt → automatisch nächste freie, kein Abbruch**) · Hostname · vCPU (4) · RAM (8192) · Disk (30G) ·
 Storage (`local-lvm`) · Template-Storage (`local`) · Bridge (`vmbr0`, DHCP) ·
 WebUI-Port (8501) · API-Port (8080) · Root-Passwort (leer = zufällig).
 
@@ -76,14 +76,15 @@ gratis Key unter pexels.com/api).
 
 ## 2 · Update
 
-Einfach den Einzeiler erneut ausführen — bei existierender CT-ID wird
-automatisch der **Update-Modus** angeboten (Container bleibt, Upstream-Code +
-Deps werden aktualisiert, `config.toml` bleibt erhalten, Services restarten).
-Idempotent, mehrfach lauffähig.
+Für ein Update `MPT_UPDATE=1` voranstellen — dann wird die angegebene CT-ID
+wiederverwendet (Container bleibt, Upstream-Code + Deps werden aktualisiert,
+`config.toml` bleibt erhalten, Services restarten). Idempotent, mehrfach lauffähig.
+Ohne `MPT_UPDATE=1` nimmt der Installer bei belegter CT-ID automatisch die
+nächste freie (kein Abbruch, keine Rückfrage).
 
 ```bash
-bash -c "$(wget -qLO - https://raw.githubusercontent.com/HatchetMan111/MoneyShortVideoPrinter/main/install/moneyprinterturbo.sh)"
-# -> "CT 150 existiert. Setup erneut ausführen (Update)?" -> Ja
+MPT_UPDATE=1 bash -c "$(wget -qLO - https://raw.githubusercontent.com/HatchetMan111/MoneyShortVideoPrinter/main/install/moneyprinterturbo.sh)"
+# -> "CT 150 existiert + MPT_UPDATE=1: Update-Modus ..."
 ```
 
 ## 3 · Deinstallation

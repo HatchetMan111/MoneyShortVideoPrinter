@@ -14,7 +14,8 @@
 #      systemd-Services (enable, Restart=always, After=network-online.target)
 #   5. Verifiziert Services + HTTP und gibt die finalen URLs aus
 #
-# Idempotent: existiert die CT-ID bereits, wird Update statt Neuanlage angeboten.
+# Idempotent: belegte CT-ID -> automatisch nächste freie (kein Abbruch, keine Rückfrage).
+# Update: MPT_UPDATE=1 voranstellen, dann wird die angegebene CT-ID wiederverwendet.
 # Debugging:  DEBUG=1 bash -x install/moneyprinterturbo.sh   (volles Trace-Log)
 # Upstream:   https://github.com/harry0703/MoneyPrinterTurbo (Python/Streamlit+FastAPI)
 # =============================================================================
@@ -103,21 +104,24 @@ else
   GENERATED_PW=0
 fi
 
-# --- Existiert CT-ID bereits? -> Update-Pfad (idempotent) ----------------------
-if pct status "${CTID}" >/dev/null 2>&1; then
-  echo "CT ${CTID} existiert bereits."
-  REUSE="update"
-  if command -v whiptail >/dev/null; then
-    whiptail --yesno "CT ${CTID} existiert. Setup im Container erneut ausführen (Update)?" 8 70 \
-      && REUSE="update" || REUSE="abort"
+# --- CT-ID belegt? -> automatisch nächste freie nehmen (kein Abbruch) ---------
+# Update eines bestehenden Containers geht gezielt via:  MPT_UPDATE=1 <einzeiler>
+ct_taken() { # ct_taken ID -> Exit 0 wenn belegt
+  pct status "$1" >/dev/null 2>&1 || [[ -f "/etc/pve/lxc/$1.conf" ]]
+}
+[[ "${CTID}" =~ ^[0-9]+$ ]] || { echo "CT-ID muss numerisch sein (hast: '${CTID}')." >&2; exit 1; }
+if ct_taken "${CTID}"; then
+  if [[ "${MPT_UPDATE:-0}" == "1" ]]; then
+    echo "-> CT ${CTID} existiert + MPT_UPDATE=1: Update-Modus, Container wird wiederverwendet."
+    REUSE="update"
   else
-    read -rp "Setup erneut ausführen (Update)? [J/n]: " ans
-    [[ "${ans:-J}" =~ ^[Nn] ]] && REUSE="abort" || REUSE="update"
-  fi
-  if [[ "${REUSE}" == "update" ]]; then
-    echo "-> Update-Modus: Container wird wiederverwendet."
-  else
-    echo "Abgebrochen. Andere CT-ID wählen."; exit 0
+    ORIG_CTID="${CTID}"
+    while ct_taken "${CTID}"; do
+      CTID=$((CTID + 1))
+      [[ "${CTID}" -le 999999999 ]] || { echo "Keine freie CT-ID mehr verfügbar." >&2; exit 1; }
+    done
+    echo "-> CT ${ORIG_CTID} belegt, nehme nächste freie CT-ID ${CTID}."
+    REUSE="create"
   fi
 else
   REUSE="create"
