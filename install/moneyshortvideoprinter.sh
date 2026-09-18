@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # =============================================================================
-# MoneyPrinterTurbo — Proxmox LXC Installer (Community-Scripts-Stil)
+# MoneyShortVideoPrinter — Proxmox LXC Installer (Community-Scripts-Stil)
 #
 # Einzeiler (auf dem Proxmox-HOST als root ausführen):
-#   bash -c "$(wget -qLO - https://raw.githubusercontent.com/HatchetMan111/MoneyShortVideoPrinter/main/install/moneyprinterturbo.sh)"
+#   bash -c "$(wget -qLO - https://raw.githubusercontent.com/HatchetMan111/MoneyShortVideoPrinter/main/install/moneyshortvideoprinter.sh)"
 #
 # Was passiert:
 #   1. Fragt CT-ID, Hostname, CPU/RAM/Disk, Storage, Netzwerk, Ports ab
@@ -16,13 +16,13 @@
 #
 # Idempotent: belegte CT-ID -> automatisch nächste freie (kein Abbruch, keine Rückfrage).
 # Update: MPT_UPDATE=1 voranstellen, dann wird die angegebene CT-ID wiederverwendet.
-# Debugging:  DEBUG=1 bash -x install/moneyprinterturbo.sh   (volles Trace-Log)
+# Debugging:  DEBUG=1 bash -x install/moneyshortvideoprinter.sh   (volles Trace-Log)
 # Upstream:   https://github.com/harry0703/MoneyPrinterTurbo (Python/Streamlit+FastAPI)
 # =============================================================================
 set -euo pipefail
 
 # ============================ VARIABLEN (oben) ================================
-APP="moneyprinterturbo"
+APP="moneyshortvideoprinter"
 GITHUB_USER="${GITHUB_USER:-HatchetMan111}"
 GITHUB_REPO="${GITHUB_REPO:-MoneyShortVideoPrinter}"
 GITHUB_BRANCH="${GITHUB_BRANCH:-main}"
@@ -30,7 +30,7 @@ RAW_BASE="https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITH
 TARBALL="https://github.com/${GITHUB_USER}/${GITHUB_REPO}/archive/refs/heads/${GITHUB_BRANCH}.tar.gz"
 
 DEFAULT_CTID="${DEFAULT_CTID:-150}"
-DEFAULT_HOSTNAME="${DEFAULT_HOSTNAME:-moneyprinterturbo}"
+DEFAULT_HOSTNAME="${DEFAULT_HOSTNAME:-moneyshortvideoprinter}"
 DEFAULT_CORES="${DEFAULT_CORES:-4}"
 DEFAULT_MEMORY="${DEFAULT_MEMORY:-8192}"   # MB (Whisper + Encoding brauchen RAM)
 DEFAULT_DISK="${DEFAULT_DISK:-30}"         # GB (Whisper-Modelle ~3GB + Cache)
@@ -177,48 +177,48 @@ else
 fi
 
 echo "-> Push nach CT:${CTID} ..."
-pct exec "${CTID}" -- mkdir -p /opt/moneyprinterturbo/repo-files/systemd
-pct push "${CTID}" "${WORKDIR}/repo/systemd/moneyprinter-webui.service" \
-  /opt/moneyprinterturbo/repo-files/systemd/moneyprinter-webui.service
-pct push "${CTID}" "${WORKDIR}/repo/systemd/moneyprinter-api.service" \
-  /opt/moneyprinterturbo/repo-files/systemd/moneyprinter-api.service
+pct exec "${CTID}" -- mkdir -p /opt/moneyshortvideoprinter/repo-files/systemd
+pct push "${CTID}" "${WORKDIR}/repo/systemd/moneyshortvideoprinter-webui.service" \
+  /opt/moneyshortvideoprinter/repo-files/systemd/moneyshortvideoprinter-webui.service
+pct push "${CTID}" "${WORKDIR}/repo/systemd/moneyshortvideoprinter-api.service" \
+  /opt/moneyshortvideoprinter/repo-files/systemd/moneyshortvideoprinter-api.service
 pct push "${CTID}" "${WORKDIR}/repo/install/setup-container.sh" \
-  /opt/moneyprinterturbo/setup-container.sh
-pct exec "${CTID}" -- chmod +x /opt/moneyprinterturbo/setup-container.sh
+  /opt/moneyshortvideoprinter/setup-container.sh
+pct exec "${CTID}" -- chmod +x /opt/moneyshortvideoprinter/setup-container.sh
 
 # --- Setup IM Container ausführen ------------------------------------------------
 echo "-> Führe Setup im Container aus (dauert einige Minuten: uv sync + ffmpeg) ..."
 pct exec "${CTID}" -- env WEBUI_PORT="${WEBUI_PORT}" API_PORT="${API_PORT}" DEBUG="${DEBUG:-0}" \
-  bash /opt/moneyprinterturbo/setup-container.sh
+  bash /opt/moneyshortvideoprinter/setup-container.sh
 
 # --- Verifikation vom Host -------------------------------------------------------
 echo "-> Verifikation ..."
-pct exec "${CTID}" -- systemctl is-active --quiet moneyprinter-webui \
+pct exec "${CTID}" -- systemctl is-active --quiet moneyshortvideoprinter-webui \
   || { echo "WebUI-Service läuft NICHT. Log:" >&2
-       pct exec "${CTID}" -- journalctl -u moneyprinter-webui --no-pager -n 100 >&2
+       pct exec "${CTID}" -- journalctl -u moneyshortvideoprinter-webui --no-pager -n 100 >&2
        exit 1; }
-pct exec "${CTID}" -- systemctl is-active --quiet moneyprinter-api \
+pct exec "${CTID}" -- systemctl is-active --quiet moneyshortvideoprinter-api \
   || { echo "API-Service läuft NICHT (Warnung). Log:" >&2
-       pct exec "${CTID}" -- journalctl -u moneyprinter-api --no-pager -n 100 >&2 || true; }
+       pct exec "${CTID}" -- journalctl -u moneyshortvideoprinter-api --no-pager -n 100 >&2 || true; }
 CT_IP="$(pct exec "${CTID}" -- hostname -I | awk '{print $1}')"
 echo "-> HTTP-Check http://${CT_IP}:${WEBUI_PORT}/ ..."
 curl -fsS "http://${CT_IP}:${WEBUI_PORT}/" -o /dev/null || {
   echo "HTTP-Check fehlgeschlagen (Container-lokal lief er — evtl. Firewall/Netz)." >&2
-  pct exec "${CTID}" -- journalctl -u moneyprinter-webui --no-pager -n 100 >&2
+  pct exec "${CTID}" -- journalctl -u moneyshortvideoprinter-webui --no-pager -n 100 >&2
   exit 1
 }
 cleanup
 trap fail ERR
 
 echo "=================================================================="
-echo " ✅ Fertig! MoneyPrinterTurbo Web UI: http://${CT_IP}:${WEBUI_PORT}"
+echo " ✅ Fertig! MoneyShortVideoPrinter Web UI: http://${CT_IP}:${WEBUI_PORT}"
 echo "    API (Docs): http://${CT_IP}:${API_PORT}/docs"
-echo "    CT-ID ${CTID} (${HOSTNAME}), onboot=1, Services=moneyprinter-webui+moneyprinter-api"
+echo "    CT-ID ${CTID} (${HOSTNAME}), onboot=1, Services=moneyshortvideoprinter-webui+moneyshortvideoprinter-api"
 if [[ "${GENERATED_PW}" == "1" ]]; then
   echo "    Root-Passwort (zufällig): ${PASSWORD}"
 fi
 echo "    Update : Einzeiler erneut laufen lassen (Update-Modus)"
-echo "    Logs   : pct exec ${CTID} -- journalctl -u moneyprinter-webui -f"
-echo "    API-Log: pct exec ${CTID} -- journalctl -u moneyprinter-api -f"
+echo "    Logs   : pct exec ${CTID} -- journalctl -u moneyshortvideoprinter-webui -f"
+echo "    API-Log: pct exec ${CTID} -- journalctl -u moneyshortvideoprinter-api -f"
 echo "    Löschen: pct stop ${CTID} && pct destroy ${CTID}"
 echo "=================================================================="

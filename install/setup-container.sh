@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# MoneyPrinterTurbo — Container-Setup (läuft IM LXC, Debian 12, als root)
+# MoneyShortVideoPrinter — Container-Setup (läuft IM LXC, Debian 12, als root)
 # Wird vom Host-Installer per pct push + pct exec aufgerufen oder manuell:
 #   curl -fsSL https://raw.githubusercontent.com/HatchetMan111/MoneyShortVideoPrinter/main/install/setup-container.sh | bash
 # Idempotent: kann mehrfach laufen (Upstream-Update, venv-Reuse, config bleibt).
@@ -9,16 +9,16 @@
 set -euo pipefail
 
 # --- Variablen (oben, Community-Scripts-Stil) ---------------------------------
-APP="moneyprinterturbo"
-BASE_DIR="/opt/moneyprinterturbo"
+APP="moneyshortvideoprinter"
+BASE_DIR="/opt/moneyshortvideoprinter"
 SRC_DIR="${BASE_DIR}/MoneyPrinterTurbo"   # Upstream-Clone (harry0703/MoneyPrinterTurbo)
 VENV_PY="${SRC_DIR}/.venv/bin/python"
 WEBUI_PORT="${WEBUI_PORT:-8501}"
 API_PORT="${API_PORT:-8080}"
 PYTHON_BIN="${PYTHON_BIN:-python3.11}"
 UPSTREAM_REPO="https://github.com/harry0703/MoneyPrinterTurbo.git"
-WEBUI_SERVICE="moneyprinter-webui"
-API_SERVICE="moneyprinter-api"
+WEBUI_SERVICE="moneyshortvideoprinter-webui"
+API_SERVICE="moneyshortvideoprinter-api"
 SERVICE_DIR="/etc/systemd/system"
 
 # --- Fehlerkette: immer VOLL ausgeben, nie nur letzte Zeile -------------------
@@ -112,7 +112,7 @@ WEBUI_PORT="${WEBUI_PORT}" API_PORT="${API_PORT}" "${VENV_PY}" - <<'PY'
 import os, re
 webui_port = os.environ.get("WEBUI_PORT", "8501")
 api_port = os.environ.get("API_PORT", "8080")
-path = "/opt/moneyprinterturbo/MoneyPrinterTurbo/config.toml"
+path = "/opt/moneyshortvideoprinter/MoneyPrinterTurbo/config.toml"
 with open(path, encoding="utf-8") as f:
     content = f.read()
 content = re.sub(r'^listen_host\s*=.*$', 'listen_host = "0.0.0.0"', content, flags=re.M)
@@ -195,8 +195,8 @@ fi
 CT_IP="$(hostname -I | awk '{print $1}')"
 echo "[8/8] Fertig."
 echo "=================================================================="
-echo " MoneyPrinterTurbo Web UI: http://${CT_IP}:${WEBUI_PORT}"
-echo " MoneyPrinterTurbo API   : http://${CT_IP}:${API_PORT}/docs"
+echo " MoneyShortVideoPrinter Web UI: http://${CT_IP}:${WEBUI_PORT}"
+echo " MoneyShortVideoPrinter API   : http://${CT_IP}:${API_PORT}/docs"
 echo " Services: systemctl status ${WEBUI_SERVICE} ${API_SERVICE}"
 echo " Logs    : journalctl -u ${WEBUI_SERVICE} -f  |  journalctl -u ${API_SERVICE} -f"
 echo " Config  : ${SRC_DIR}/config.toml (API-Keys in der Web UI unter Basis-Einstellungen eintragen)"

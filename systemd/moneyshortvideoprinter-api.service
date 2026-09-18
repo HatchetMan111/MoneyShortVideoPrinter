@@ -1,16 +1,16 @@
 [Unit]
-Description=MoneyPrinterTurbo API (FastAPI, Proxmox LXC)
+Description=MoneyShortVideoPrinter API (FastAPI, Proxmox LXC)
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
 User=root
-WorkingDirectory=/opt/moneyprinterturbo/MoneyPrinterTurbo
+WorkingDirectory=/opt/moneyshortvideoprinter/MoneyPrinterTurbo
 Environment=PYTHONUNBUFFERED=1
-# Bind (0.0.0.0:8080) kommt aus /opt/moneyprinterturbo/MoneyPrinterTurbo/config.toml
+# Bind (0.0.0.0:8080) kommt aus /opt/moneyshortvideoprinter/MoneyPrinterTurbo/config.toml
 # (listen_host/listen_port, wird von setup-container.sh idempotent gepatcht).
-ExecStart=/opt/moneyprinterturbo/MoneyPrinterTurbo/.venv/bin/python main.py
+ExecStart=/opt/moneyshortvideoprinter/MoneyPrinterTurbo/.venv/bin/python main.py
 Restart=always
 RestartSec=5
 StandardOutput=journal
